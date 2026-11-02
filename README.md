@@ -12,6 +12,10 @@
 > **Seedream（出图）/ Seedance（出视频）**。本项目调的就是这两个官方模型。
 > 网上「即梦逆向 API」有封号与合规风险，本项目不使用。
 
+> 📥 **第一次用？看 [完整下载与安装流程（DOWNLOAD.md）](DOWNLOAD.md)**：
+> 从 GitHub 下载（git 或 ZIP）→ 配置自己的 API Key → `doctor` 验证 → 第一条视频 →
+> （可选）装成 Agent Skill。含 Windows 命令、预期输出样例、按阶段排错表和「让 AI 帮你装」提示词。
+
 ## 能做什么
 
 | 能力 | 命令 | 说明 |
@@ -29,6 +33,9 @@
 ## 快速开始（3 分钟）
 
 > 不想用 git？在仓库页点 **Code → Download ZIP**，解压后同样使用（脚本零依赖，不需要安装）。
+>
+> 想一条命令跑完「检查环境 → 配 Key → 验证」？下载后运行 `bash scripts/quickstart.sh`
+> （加 `--with-skill` 顺便装成 Agent Skill）。详见 [DOWNLOAD.md](DOWNLOAD.md)。
 
 ```bash
 git clone https://github.com/Rushang420/jimeng-video-skill.git
@@ -88,13 +95,20 @@ echo 'ark-xxx' > ~/.ark_key                                       # 4. 家目录
 # 自动探测并链接到 ~/.agents/skills、~/.dsh/skills、~/.cursor/skills、~/.codex/skills、~/.claude/skills
 bash scripts/install_skill.sh
 
+# 复制安装（不跟随仓库更新）、卸载
+bash scripts/install_skill.sh --copy
+bash scripts/install_skill.sh --uninstall
+
 # 或手动
 cp -R . ~/.agents/skills/jimeng-video-skill
 ```
 
+Windows 没有 bash 时，用资源管理器把整个文件夹复制到
+`%USERPROFILE%\.agents\skills\jimeng-video-skill` 即可。
+
 装好后在对话里说「用即梦生成一条视频」即可触发；Agent 会读 `SKILL.md` 并按里面的
 工作流（doctor → dry-run → 真跑 → 验片）执行。适用于 Codex / Claude Code / Cursor / DSH 等
-支持 `SKILL.md` 的 Agent。
+支持 `SKILL.md` 的 Agent。完整步骤见 [DOWNLOAD.md 第 5 步](DOWNLOAD.md#第-5-步可选装成-agent-skill让-ai-直接调用)。
 
 ## 命令速查
 
@@ -155,6 +169,9 @@ python3 scripts/jimeng_api.py video --prompt "..." --out g.mp4 --dry-run
 **Q：报 `ModelNotOpen`？**
 控制台「开通管理」勾选模型；Seedance 2.0 还需要余额 > 200 元。
 
+**Q：第一次安装的完整步骤在哪？**
+见 [DOWNLOAD.md](DOWNLOAD.md)（下载 → 配 Key → 验证 → 第一条视频 → 装成 Agent Skill → 排错）。
+
 **Q：别人怎么用自己的 Key？**
 运行 `python3 scripts/jimeng_api.py setup`，粘贴自己的 Key 即可（存到家目录 `~/.config/jimeng/`，
 不进仓库、不进 shell 历史）。详见上文「别人下载后：怎么配自己的 API Key」。
@@ -175,9 +192,11 @@ python3 scripts/jimeng_api.py video --prompt "..." --out g.mp4 --dry-run
 jimeng-video-skill/
 ├── SKILL.md                  # Agent 读取的技能说明（工作流 + 护栏）
 ├── README.md                 # 人类读的说明（本文件）
+├── DOWNLOAD.md               # 完整下载/安装流程（从零到第一条视频）
 ├── scripts/
 │   ├── jimeng_api.py         # 单文件调用器：setup/出图/出视频/续查/doctor
-│   └── install_skill.sh      # 链接到本机 Agent 技能目录
+│   ├── install_skill.sh      # 链接到本机 Agent 技能目录
+│   └── quickstart.sh         # 一键：检查环境 → 配 Key → doctor（可选装 skill）
 ├── reference/
 │   ├── api.md                # 接口、参数、错误码、价格
 │   └── prompting.md          # 视频/图片提示词写法与示例

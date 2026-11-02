@@ -15,6 +15,9 @@ disable-model-invocation: false
 
 ## 一次性配置（每台新机器）
 
+> 人类用户第一次安装请看 [DOWNLOAD.md](DOWNLOAD.md)（含 Windows、ZIP 下载、排错表）；
+> 想一条命令跑完可执行 `bash scripts/quickstart.sh`（加 `--with-skill` 顺便安装成 skill）。
+
 每个人用自己的 Ark API Key（<https://ark.volcengine.com/region:cn-beijing/apiKey>），
 费用记在各自账户。**永远不要把 Key 写进 git、贴在聊天里、或让 Agent 回显。**
 
