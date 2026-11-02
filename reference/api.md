@@ -120,7 +120,10 @@ doctor（免费）→ --dry-run（免费）→ 1 张图 0.12 → 1 条 480p/4s 1
 
 ## 7. 安全
 
-- Key 只放本地（环境变量 / `_secrets/ark_api_key.txt` / `--key-file`），**不要提交 git**。
-- 本仓库 `.gitignore` 已忽略 `_secrets/`、`*.mp4`、`*.jpg`、`jimeng_cost.jsonl`。
-- 给别人用：给脚本 + 让对方自己申请 Key，不要共享 Key。
+- 本仓库不含 Key；每个使用者跑一次 `python3 scripts/jimeng_api.py setup` 配置自己的 Key，
+  默认写到 `~/.config/jimeng/ark_api_key.txt`（权限 600、在仓库之外、输入不回显）。
+- 也支持环境变量 `ARK_API_KEY`、`--key-file`、`_secrets/ark_api_key.txt`、`~/.ark_key`。
+- **不要提交 git、不要贴在聊天/issue 里**；`.gitignore` 已忽略 `_secrets/`、`*.mp4`、
+  `*.jpg`、`jimeng_cost.jsonl`。
+- 给别人用：给脚本 + 让对方自己申请 Key，不要共享 Key；轮换时重新跑 `setup` 覆盖。
 - 定期在控制台轮换 Key。

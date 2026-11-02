@@ -34,9 +34,8 @@
 git clone https://github.com/Rushang420/jimeng-video-skill.git
 cd jimeng-video-skill
 
-# 1) 放 Key（不要提交到 git）
-export ARK_API_KEY=ark-xxxxxxxx
-# 或：mkdir -p _secrets && echo 'ark-xxx' > _secrets/ark_api_key.txt
+# 1) 配置你自己的 Key（交互式粘贴，输入不回显，不会进 shell 历史）
+python3 scripts/jimeng_api.py setup
 
 # 2) 免费体检：Key 是否有效、模型是否已开通
 python3 scripts/jimeng_api.py doctor
@@ -48,8 +47,38 @@ python3 scripts/jimeng_api.py video --prompt "镜头缓慢推进，衣摆与头�
   --image first.jpg --out shot.mp4 --resolution 480p --duration 4
 ```
 
-没有 Key？去 <https://ark.volcengine.com/region:cn-beijing/apiKey> 生成。
-**Seedance 2.0 系列要求账户余额 > 200 元**（或 200 元资源包）；Seedream 需在控制台勾选开通。
+没有 Key？去 <https://ark.volcengine.com/region:cn-beijing/apiKey> 生成（每个使用者用自己的 Key，
+费用记在自己的火山方舟账户）。**Seedance 2.0 系列要求账户余额 > 200 元**（或 200 元资源包）；
+Seedream 需在控制台勾选开通。
+
+## 别人下载后：怎么配自己的 API Key
+
+仓库里**不含任何 Key**，每个使用者第一次用时自己配置一次即可。推荐用内置的 `setup`：
+
+```bash
+python3 scripts/jimeng_api.py setup
+# 去 https://ark.volcengine.com/region:cn-beijing/apiKey 复制 Key → 粘贴 → 回车
+# 保存到 ~/.config/jimeng/ark_api_key.txt（权限 600），并自动调接口验证
+```
+
+三点保证：输入**不回显**（getpass）、**不进 shell 历史**（不是命令行参数）、**不在仓库内**
+（写到用户家目录），所以不会被 commit 或误分享。保存后直接 `doctor` 确认即可。
+
+不想用 `setup` 也可以用环境变量或指定文件，优先级从高到低：
+
+```bash
+python3 scripts/jimeng_api.py --key-file /path/to/key.txt doctor  # 1. 命令行指定
+export ARK_API_KEY=ark-xxxxxxxx                                   # 2. 环境变量
+echo 'ark-xxx' > _secrets/ark_api_key.txt                         # 3. 当前目录（已 gitignore）
+echo 'ark-xxx' > ~/.ark_key                                       # 4. 家目录
+~/.config/jimeng/ark_api_key.txt                                  # 5. setup 的默认位置
+```
+
+- 换 Key / 轮换：重新跑一次 `setup` 覆盖即可。
+- 删除 Key：`rm ~/.config/jimeng/ark_api_key.txt`。
+- 查看 Key 存哪：`python3 scripts/jimeng_api.py setup --show-path`。
+- 各自申请各自的 Key，不要共用；把 Key 给 Agent 时也只需让它在**本机终端**运行 `setup`，
+  **不要把 Key 明文发进对话**（会留在聊天记录里）。
 
 ## 安装成 Agent Skill
 
@@ -70,6 +99,10 @@ cp -R . ~/.agents/skills/jimeng-video-skill
 ## 命令速查
 
 ```bash
+# 首次配置 / 换 Key（交互式，不回显）
+python3 scripts/jimeng_api.py setup
+python3 scripts/jimeng_api.py setup --show-path   # 看 Key 存在哪
+
 # 体检（免费）
 python3 scripts/jimeng_api.py doctor
 
@@ -122,14 +155,19 @@ python3 scripts/jimeng_api.py video --prompt "..." --out g.mp4 --dry-run
 **Q：报 `ModelNotOpen`？**
 控制台「开通管理」勾选模型；Seedance 2.0 还需要余额 > 200 元。
 
+**Q：别人怎么用自己的 Key？**
+运行 `python3 scripts/jimeng_api.py setup`，粘贴自己的 Key 即可（存到家目录 `~/.config/jimeng/`，
+不进仓库、不进 shell 历史）。详见上文「别人下载后：怎么配自己的 API Key」。
+
 **Q：能商用吗？**
 生成内容的使用范围以火山方舟/即梦的服务条款为准，本项目只做 API 调用封装。
 
 ## 安全
 
-- Key 只放环境变量或 `_secrets/ark_api_key.txt`，`.gitignore` 已忽略该目录与产物文件。
-- 不要把 Key 写进提示词、README、issue 或聊天记录。
-- 给别人用请让对方自己申请 Key。
+- 仓库不含 Key；每个使用者用自己的 Key（`setup` 写到 `~/.config/jimeng/ark_api_key.txt`，权限 600）。
+- 也可以用环境变量 `ARK_API_KEY` 或项目内 `_secrets/ark_api_key.txt`（已 gitignore）。
+- 不要把 Key 写进提示词、README、issue、commit 或聊天记录；也不要把带 Key 的终端截图发出去。
+- 给别人用请让对方自己申请 Key；想撤销时就地重新生成，再跑一次 `setup` 覆盖。
 
 ## 目录结构
 
@@ -138,7 +176,7 @@ jimeng-video-skill/
 ├── SKILL.md                  # Agent 读取的技能说明（工作流 + 护栏）
 ├── README.md                 # 人类读的说明（本文件）
 ├── scripts/
-│   ├── jimeng_api.py         # 单文件调用器：出图/出视频/续查/doctor
+│   ├── jimeng_api.py         # 单文件调用器：setup/出图/出视频/续查/doctor
 │   └── install_skill.sh      # 链接到本机 Agent 技能目录
 ├── reference/
 │   ├── api.md                # 接口、参数、错误码、价格

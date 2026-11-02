@@ -15,11 +15,19 @@ disable-model-invocation: false
 
 ## 一次性配置（每台新机器）
 
-1. 拿到 Ark API Key：<https://ark.volcengine.com/region:cn-beijing/apiKey>
-2. 二选一放 Key（**永远不要写进 git、不要贴在聊天里**）：
+每个人用自己的 Ark API Key（<https://ark.volcengine.com/region:cn-beijing/apiKey>），
+费用记在各自账户。**永远不要把 Key 写进 git、贴在聊天里、或让 Agent 回显。**
+
+1. 交互式保存 Key（推荐，输入不回显、不进 shell 历史、不写仓库）：
    ```bash
-   export ARK_API_KEY=ark-xxxxxxxx        # 方式 A：环境变量
-   mkdir -p _secrets && echo 'ark-xxx' > _secrets/ark_api_key.txt   # 方式 B
+   python3 scripts/jimeng_api.py setup
+   ```
+   它会写到 `~/.config/jimeng/ark_api_key.txt`（权限 600）并自动调接口验证；
+   `setup --show-path` 可看路径，换 Key 就再跑一次。
+2. 或者用环境变量 / 指定文件（优先级见下）：
+   ```bash
+   export ARK_API_KEY=ark-xxxxxxxx        # 当前终端
+   python3 scripts/jimeng_api.py --key-file /path/to/key.txt doctor
    ```
 3. 装可选依赖（只有用本地图片当首帧/参考图时才需要）：
    ```bash
@@ -29,6 +37,15 @@ disable-model-invocation: false
    ```bash
    python3 scripts/jimeng_api.py doctor
    ```
+
+**Key 读取优先级**：`--key-file` → `ARK_API_KEY` → `./_secrets/ark_api_key.txt` →
+`~/.ark_key` → `~/.config/jimeng/ark_api_key.txt`。
+
+**当用户还没配 Key 时（Agent 必读）**：
+- 不要索要 Key 明文，也不要让用户把 Key 发在对话里（会留痕）。
+- 请用户在他自己的终端里运行 `python3 scripts/jimeng_api.py setup`，完成后你跑 `doctor` 确认。
+- 用户坚持用环境变量时，让他自己 `export`，你不要读取/打印变量值。
+- 始终不要在输出、命令回显、README、commit 里出现 Key。
 
 想把 skill 装进本机 agent 技能目录（可选）：
 ```bash

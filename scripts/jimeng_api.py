@@ -15,7 +15,8 @@
   JIMENG_LEDGER   成本账本路径，默认 ./jimeng_cost.jsonl（设为空字符串可关闭）
 
 快速开始：
-  python3 jimeng_api.py doctor
+  python3 jimeng_api.py setup      # 第一次：粘贴自己的 Key（不回显、不进仓库）
+  python3 jimeng_api.py doctor     # 免费体检
   python3 jimeng_api.py image --prompt "国风2D漫剧，荒原黄昏" --out a.jpg --size 1080x1920
   python3 jimeng_api.py video --prompt "镜头跟随姜焕在荒原狂奔" --image a.jpg --out a.mp4
   python3 jimeng_api.py video --prompt "..." --out b.mp4 --resolution 480p --duration 4
@@ -57,7 +58,11 @@ LEDGER = os.environ.get("JIMENG_LEDGER", os.path.join(os.getcwd(), "jimeng_cost.
 
 # ------------------------------------------------------------------ 基础
 def get_key(args):
-    """读取 Key：--key-file → ARK_API_KEY → ./_secrets/ark_api_key.txt → ~/.ark_key → ~/.config/jimeng/ark_api_key.txt"""
+    """读取 Key：--key-file → ARK_API_KEY → ./_secrets/ark_api_key.txt → ~/.ark_key → ~/.config/jimeng/ark_api_key.txt
+
+    第一次使用（包括别人下载这个 skill 后）：运行 `python3 scripts/jimeng_api.py setup`，
+    交互式粘贴自己的 Key，脚本会写到 ~/.config/jimeng/ark_api_key.txt（权限 600）。
+    """
     if getattr(args, "key_file", None):
         with open(args.key_file, encoding="utf-8") as f:
             return f.read().strip()
@@ -74,11 +79,14 @@ def get_key(args):
             if v:
                 return v
     die(
-        "找不到 API Key。三种方式任选：\n"
-        "  1) export ARK_API_KEY=ark-xxx\n"
-        "  2) echo 'ark-xxx' > _secrets/ark_api_key.txt\n"
-        "  3) --key-file /path/to/key.txt\n"
-        "去 https://ark.volcengine.com/region:cn-beijing/apiKey 生成。Key 不要提交到 git。"
+        "找不到 API Key。先运行（推荐，一次即可）：\n"
+        "  python3 scripts/jimeng_api.py setup\n"
+        "其他方式：\n"
+        "  export ARK_API_KEY=ark-xxx\n"
+        "  echo 'ark-xxx' > _secrets/ark_api_key.txt\n"
+        "  python3 scripts/jimeng_api.py --key-file /path/to/key.txt image ...\n"
+        "Key 去 https://ark.volcengine.com/region:cn-beijing/apiKey 生成；"
+        "每个使用者用自己的 Key，不要提交到 git、不要发在聊天里。"
     )
 
 
@@ -200,6 +208,54 @@ def estimate_video_cost(model, resolution, duration):
     return prices[resolution] * duration
 
 
+# ------------------------------------------------------------------ setup
+def cmd_setup(args):
+    """首次配置：把 API Key 写进 ~/.config/jimeng/ark_api_key.txt（权限 600）。
+
+    别人下载 skill 后只需要跑一次：交互式粘贴自己的 Key，不会回显、不会进 shell 历史，
+    也不会写进仓库（该路径在仓库之外）。
+    """
+    target = args.key_file or os.path.expanduser("~/.config/jimeng/ark_api_key.txt")
+    if args.show_path:
+        print(target)
+        return 0
+
+    print("Key 申请/复制：https://ark.volcengine.com/region:cn-beijing/apiKey")
+    if os.path.exists(target):
+        print("注意：将覆盖已有 Key：%s" % target.replace(os.path.expanduser("~"), "~"))
+    if args.stdin:
+        key = sys.stdin.read().strip()
+    else:
+        import getpass
+        key = getpass.getpass("粘贴你的 Ark API Key（输入不回显，回车确认）: ").strip()
+
+    if not key:
+        die("没有读到 Key，未写入任何文件。")
+    if not key.startswith("ark-"):
+        print("警告：Ark Key 一般以 `ark-` 开头，请确认是否复制完整。", file=sys.stderr)
+    if len(key) < 20:
+        print("警告：Key 只有 %d 个字符，疑似不完整。" % len(key), file=sys.stderr)
+
+    d = os.path.dirname(os.path.abspath(target))
+    os.makedirs(d, exist_ok=True)
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(key + "\n")
+    os.chmod(target, 0o600)
+    print("已保存: %s（权限 600，仅本用户可读）" % target.replace(os.path.expanduser("~"), "~"))
+    print("读取顺序：--key-file → ARK_API_KEY → ./_secrets/ark_api_key.txt → ~/.ark_key → 本文件")
+
+    if args.no_verify:
+        return 0
+    print("正在验证 Key…")
+    code, j = api("GET", "/models", key=key, timeout=30, retries=1)
+    if code == 200:
+        print("验证通过 ✓ 接下来运行: python3 scripts/jimeng_api.py doctor")
+        return 0
+    print("验证失败 ✗ HTTP %s %s" % (code, err_text(j)), file=sys.stderr)
+    print("Key 已保存但可能无效：请到控制台重新生成后再次运行 setup。", file=sys.stderr)
+    return 1
+
+
 # ------------------------------------------------------------------ doctor
 def cmd_doctor(args):
     key = get_key(args)
@@ -208,6 +264,7 @@ def cmd_doctor(args):
     code, j = api("GET", "/models", key=key, timeout=30, retries=1)
     if code != 200:
         print("鉴权: ✗ HTTP %s %s" % (code, err_text(j)))
+        print("提示：重新配置 Key → python3 scripts/jimeng_api.py setup")
         return 1
     print("鉴权: ✓")
 
@@ -445,6 +502,13 @@ def main():
     ap.add_argument("--key-file", help="Key 文件路径（优先级最高）")
 
     sub = ap.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("setup", help="首次配置：保存你自己的 API Key（写入 ~/.config/jimeng/ark_api_key.txt）")
+    s.add_argument("--stdin", action="store_true",
+                   help="从 stdin 读 Key（自动化用；手工配置不要加，避免进 shell 历史）")
+    s.add_argument("--show-path", action="store_true", help="只打印 Key 文件路径，不读取/写入 Key")
+    s.add_argument("--no-verify", action="store_true", help="保存后不调用接口验证")
+    s.set_defaults(func=cmd_setup)
 
     d = sub.add_parser("doctor", help="体检：Key 是否有效、哪些模型已开通（免费）")
     d.set_defaults(func=cmd_doctor)
