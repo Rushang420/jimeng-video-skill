@@ -2,6 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Rushang420/jimeng-video-skill)](https://github.com/Rushang420/jimeng-video-skill/releases)
 
 一个**零依赖、单文件**的即梦同源模型调用器，同时是一个可被 AI Agent 直接调用的 Skill。
 下载后配好 Key 就能：**文生视频 / 图生视频 / 首帧生视频 / 首尾帧生视频 / 出图锁角色**，
@@ -26,6 +27,8 @@
 | 成本账本 | 自动 | 每次成功记录到 `jimeng_cost.jsonl` |
 
 ## 快速开始（3 分钟）
+
+> 不想用 git？在仓库页点 **Code → Download ZIP**，解压后同样使用（脚本零依赖，不需要安装）。
 
 ```bash
 git clone https://github.com/Rushang420/jimeng-video-skill.git
